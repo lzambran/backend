@@ -7,7 +7,7 @@ exports.register = async (req, res) => {
     const { username, password } = req.body;
 
     if (!username || !password) {
-        return res.status(400).json({ msg: "Faltan ddatos" });
+        return res.status(400).json({ msg: "Faltan datos" });
     }
 
     try {
@@ -15,7 +15,7 @@ exports.register = async (req, res) => {
         if (existingUser) {
             return res.status(400).json({ msg: "El usuario ya existe" });
         }
-        const hashedPassword = bcrypt.hashSync(password, 10);
+        const hashedPassword = await bcrypt.hash(password, 10);
         const userId = await createUser(username, hashedPassword);
 
         return res.status(200).json({ msg: "Usuario registrado exitosamente", userId });
@@ -35,7 +35,7 @@ exports.login =  async(req, res) => {
             return res.status(400).json({msg: "El usuario no existe"});
         }
 
-        const isMatch = bcrypt.compareSync(password, user.password);
+        const isMatch = await bcrypt.compare(password, user.password);
 
         if (!isMatch){
             return res.status(400).json({msg: "Contraseña incorrecta"});
@@ -51,6 +51,6 @@ exports.login =  async(req, res) => {
             message: "Inicio de sesion exitoso"
         });
     } catch (err) {
-        return res.satatus(500).json({msg: "Error all inciar sesion", error: err.message});
+        return res.status(500).json({msg: "Error al inciar sesion", error: err.message});
     }
 };

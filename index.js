@@ -3,6 +3,7 @@ const app = express();
 const cors = require('cors');
 require('dotenv').config();
 
+console.log('JWT_SECRET:', process.env.JWT_SECRET);
 
 // const db = require('./config/db');
 

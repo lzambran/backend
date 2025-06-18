@@ -1,5 +1,5 @@
 const db = require('../config/db');
-
+// 
 exports.getContacts = async (req, res) => {
     try {
         const [contact] = await db.query('SELECT * FROM contact');
