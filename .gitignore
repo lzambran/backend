@@ -1,2 +1,20 @@
-node_modules
+# Node modules
+node_modules/
+
+# Environment variables
 .env
+
+# package.json
+package-lock.json
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Optional: IDE settings (Visual Studio Code)
+.vscode/
