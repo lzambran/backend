@@ -127,45 +127,48 @@ exports.updateProject = async (req, res) => {
 
 
 exports.deleteProject = async (req, res) => {
+  const { id } = req.params;
+
+  const connection = await db.getConnection(); // ✅ Obtener conexión individual
+
   try {
-    const { id } = req.params;
+    await connection.beginTransaction(); // ✅ Inicia transacción
 
-    await db.beginTransaction(); 
-
-    // TODO:: 1. Buscar el proyecto
-    const [rows] = await db.query('SELECT * FROM projects WHERE id = ?', [id]);
+    // 1. Verificar si el proyecto existe
+    const [rows] = await connection.query('SELECT * FROM projects WHERE id = ?', [id]);
     if (rows.length === 0) {
+      await connection.rollback();
+      connection.release();
       return res.status(404).json({ msg: 'Proyecto no encontrado' });
     }
 
     const project = rows[0];
 
-    // TODO::2. Insertar en historial antes de eliminar
-    await db.query(
+    // 2. Insertar en historial
+    await connection.query(
       `INSERT INTO project_logs (project_id, title, deleted_by, deleted_at, image_url, action)
        VALUES (?, ?, ?, NOW(), ?, 'deleted')`,
       [project.id, project.title, req.user.id || 0, project.image]
     );
 
-    // 4️⃣ Elimina las views relacionadas
-    await db.query(
-      'DELETE FROM views WHERE project_id = ?', 
-      [id]
-    );
+    // 3. Eliminar vistas relacionadas
+    await connection.query('DELETE FROM views WHERE project_id = ?', [id]);
 
-    // TODO:: 3. Eliminar imagen de Cloudinary si existe
+    // 4. Eliminar imagen en Cloudinary
     if (project.image_public_id) {
       await deleteFromCloudinary(project.image_public_id);
     }
 
-    // TODO::4. Eliminar el proyecto
-    await db.query('DELETE FROM projects WHERE id = ?', [id]);
-    await db.commit();  
+    // 5. Eliminar el proyecto
+    await connection.query('DELETE FROM projects WHERE id = ?', [id]);
+
+    await connection.commit(); // ✅ Confirmar transacción
     res.json({ msg: 'Proyecto eliminado y registrado en historial' });
   } catch (err) {
-    await db.rollback();
-    console.error('Error al eliminar proyecto:', err);
-    res.status(500).json({ msg: 'Error interno', err: err.message });
+    await connection.rollback(); // ❌ Revertir si algo falla
+    res.status(500).json({ msg: 'Error al eliminar proyecto', error: err.message });
+  } finally {
+    connection.release(); // ✅ Liberar conexión
   }
 };
 
